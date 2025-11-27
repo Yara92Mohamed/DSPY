@@ -1,0 +1,127 @@
+(myenv) G:\sinppet_assignment>python run_agent_hybrid.py --batch sample_questions_hybrid_eval.jsonl --out outputs_final1.jsonl        
+Retail Analytics Copilot
+
+Initializing agent components...
+✓ Agent initialized
+
+Processing 6 questions...
+
+Processing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   0% -:--:--
+Q: According to the product policy, what is the return window (days) for unopened Beverages? Return an integer.
+[DEBUG] Routed to: rag
+[DEBUG] Retrieved 5 documents
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+Processing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   0% -:--:--A: 14
+Citations: catalog::chunk1, marketing_calendar::chunk0, marketing_calendar::chunk1, product_policy::chunk0, product_policy::chunk1    
+
+Q: During 'Summer Beverages 2017' as defined in the marketing calendar, which product category had the highest total quantity sold?   
+Return {category:str, quantity:int}.
+[DEBUG] Routed to: hybrid
+[DEBUG] Retrieved 5 documents
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] ✓ Using TEMPLATE SQL (no LLM)
+[DEBUG] Final SQL:
+SELECT c.CategoryName, SUM(od.Quantity) as TotalQuantity
+FROM "Order Details" od
+JOIN Products p ON od.ProductID = p.ProductID
+JOIN Categories c ON p.CategoryID = c.CategoryID
+JOIN Orders o ON od.OrderID = o.OrderID
+WHERE date(o.OrderDate) BETWEEN '2017-06-01' AND '2017-06-30'
+GROUP BY c.CategoryName
+ORDER BY TotalQuantity DESC
+LIMIT 1
+[DEBUG] ✓ SUCCESS: 1 rows
+[DEBUG] Validation: PASSED
+Processing ━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  17% -:--:--A: {'category': 'Confections', 'quantity': 18320}
+Citations: Categories, Order Details, Orders, Products, catalog::chunk1, marketing_calendar::chunk0, marketing_calendar::chunk1,      
+marketing_calendar::chunk2, product_policy::chunk1
+
+Q: Using the AOV definition from the KPI docs, what was the Average Order Value during 'Winter Classics 2017'? Return a float rounded 
+to 2 decimals.
+[DEBUG] Routed to: hybrid
+[DEBUG] Retrieved 5 documents
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] ✓ Using TEMPLATE SQL (no LLM)
+[DEBUG] Final SQL:
+SELECT ROUND(SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)) / COUNT(DISTINCT o.OrderID), 2) as AOV
+FROM "Order Details" od
+JOIN Orders o ON od.OrderID = o.OrderID
+WHERE date(o.OrderDate) BETWEEN '2017-12-01' AND '2017-12-31'
+[DEBUG] ✓ SUCCESS: 1 rows
+[DEBUG] Validation: PASSED
+Processing ━━━━━━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━━━━━  33% 0:00:02A: 21018.7
+Citations: Order Details, Orders, marketing_calendar::chunk0, marketing_calendar::chunk1, marketing_calendar::chunk2,
+product_policy::chunk0, product_policy::chunk1
+
+Q: Top 3 products by total revenue all-time. Revenue uses Order Details: SUM(UnitPrice*Quantity*(1-Discount)). Return 
+list[{product:str, revenue:float}].
+[DEBUG] Routed to: sql
+[DEBUG] ✓ Using TEMPLATE SQL (no LLM)
+[DEBUG] Final SQL:
+SELECT p.ProductName, ROUND(SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)), 2) as Revenue
+FROM "Order Details" od
+JOIN Products p ON od.ProductID = p.ProductID
+GROUP BY p.ProductName
+ORDER BY Revenue DESC
+LIMIT 3
+[DEBUG] ✓ SUCCESS: 3 rows
+[DEBUG] Validation: PASSED
+Processing ━━━━━━━━━━━━━━━━━━━━╺━━━━━━━━━━━━━━━━━━━  50% 0:00:02A: [{'product': 'Côte de Blaye', 'revenue': 53265895.23}, {'product': 
+'Thüringer Rostbratwurst', 'revenue': 24623469.23}, {'product':
+'Mishi Kobe Niku', 'revenue': 19423037.5}]
+Citations: Order Details, Products
+
+Q: Total revenue from the 'Beverages' category during 'Summer Beverages 2017' dates. Return a float rounded to 2 decimals.
+[DEBUG] Routed to: hybrid
+[DEBUG] Retrieved 5 documents
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] ✓ Using TEMPLATE SQL (no LLM)
+[DEBUG] Final SQL:
+SELECT ROUND(SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)), 2) as Revenue
+FROM "Order Details" od
+JOIN Products p ON od.ProductID = p.ProductID
+JOIN Categories c ON p.CategoryID = c.CategoryID
+JOIN Orders o ON od.OrderID = o.OrderID
+WHERE c.CategoryName = 'Beverages'
+  AND date(o.OrderDate) BETWEEN '2017-06-01' AND '2017-06-30'
+[DEBUG] ✓ SUCCESS: 1 rows
+[DEBUG] Validation: PASSED
+Processing ━━━━━━━━━━━━━━━━━━━━━━━━━━╸━━━━━━━━━━━━━  67% 0:00:02A: 611562.68
+Citations: Categories, Order Details, Orders, Products, catalog::chunk1, marketing_calendar::chunk0, marketing_calendar::chunk1,      
+marketing_calendar::chunk2, product_policy::chunk1
+
+Q: Per the KPI definition of gross margin, who was the top customer by gross margin in 2017? Assume CostOfGoods is approximated by 70%of UnitPrice if not available. Return {customer:str, margin:float}.
+[DEBUG] Routed to: hybrid
+[DEBUG] Retrieved 5 documents
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-06-01 to 2017-06-30
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] Found dates: 2017-12-01 to 2017-12-31
+[DEBUG] ✓ Using TEMPLATE SQL (no LLM)
+[DEBUG] Final SQL:
+SELECT c.CompanyName, ROUND(SUM((od.UnitPrice * 0.3) * od.Quantity * (1 - od.Discount)), 2) as GrossMargin
+FROM "Order Details" od
+JOIN Orders o ON od.OrderID = o.OrderID
+JOIN Customers c ON o.CustomerID = c.CustomerID
+WHERE strftime('%Y', o.OrderDate) = '2017'
+GROUP BY c.CompanyName
+ORDER BY GrossMargin DESC
+LIMIT 1
+[DEBUG] ✓ SUCCESS: 1 rows
+[DEBUG] Validation: PASSED
+Processing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╺━━━━━━  83% 0:00:01A: {'customer': 'Wilman Kala', 'margin': 251847.49}
+Citations: Customers, Order Details, Orders, kpi_definitions::chunk0, kpi_definitions::chunk2, marketing_calendar::chunk0,
+marketing_calendar::chunk1, marketing_calendar::chunk2
+Processing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:05
+
+✓ Results written to outputs_final1.jsonl
