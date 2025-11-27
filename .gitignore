@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.mypy_cache/
+.env
+myenv/
+venv/
+.env/
+*.sqlite
